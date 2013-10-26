@@ -3,6 +3,7 @@
 import argparse
 import math
 import os
+import pickle
 
 PRICE_BONUS = 0.01
 VOLUME_BONUS = 1.0
@@ -65,12 +66,15 @@ def main():
     for line in lines:
       d, p, v = line.split(' ')
       dpv.append([d, float(p), float(v)])
-    output_file = '%s/%s.txt' % (args.feature_dir, ticker)
-    with open(output_file, 'w') as fp:
-      for j in range(offset, len(dpv)):
-        features = compute_features(dpv, j, step, num)
-        assert len(features) == num*2 + (num-1)*2
-        print('%s : %s' % (dpv[j][0], ' '.join([str(f) for f in features])), file=fp)
+    output = []
+    for j in range(offset, len(dpv)):
+      features = compute_features(dpv, j, step, num)
+      assert len(features) == num*2 + (num-1)*2
+      output.append([dpv[j][0]] + features)
+    output_file = '%s/%s.p' % (args.feature_dir, ticker)
+    fp = open(output_file, 'wb')
+    pickle.dump(output, fp, 1)
+    fp.close()
 
 if __name__ == '__main__':
   main()
