@@ -97,20 +97,27 @@ def read_tickers(ranking_file):
       tickers.append(row[1])
   return tickers
 
-def read_tickers_by_filter(ranking_file, k, ticker_filter):
+def read_tickers_by_filter_nodup(ranking_file, k, ticker_filter, tickers):
+  tickers = set(tickers)
   all_tickers = read_tickers(ranking_file)
   if k < 0:
     all_tickers.reverse()
     k = -k
-  tickers = []
+  new_tickers = []
   for t in all_tickers:
     if t not in ticker_filter:
       continue
-    tickers.append(t)
-    if len(tickers) >= k:
+    if t in tickers:
+      continue
+    new_tickers.append(t)
+    if k > 0 and len(new_tickers) >= k:
       break
-  assert len(tickers) == k
-  return tickers
+  if k > 0:
+    assert len(new_tickers) == k
+  return new_tickers
+
+def read_tickers_by_filter(ranking_file, k, ticker_filter):
+  return read_tickers_by_filter_nodup(ranking_file, k, ticker_filter, [])
 
 def read_tickers_by_index(ranking_file, index=None):
   all_tickers = read_tickers(ranking_file)
@@ -133,7 +140,10 @@ def simulate_market_trans(trans, market_data_file):
   mtrans = []
   for t in trans:
     ticker, bdate, bprice, sdate, sprice = t
-    assert bdate in m
+    if bdate not in m:
+      # This happens for certain stocks that are open during us holidays.
+      bdate, bprice = get_price_internal(m, bdate)
+      assert bdate is not None and bprice is not None
     if sdate not in m:
       # This happens if the stock is dead before selling date and a somewhat random date is picked, which is not an open date.
       sdate, sprice = get_price_internal(m, sdate)
