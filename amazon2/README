@@ -1,0 +1,28 @@
+procedure
+=========
+
+1. get historical data
+2. run collect_tickers.py to get ticker list
+3. run collect_open_dates.py to get market open dates
+4. run sanitize_data.py to extract and sanitize (filling holes) historical data
+5. run collect_open_dates_sanitized.py to get market open dates from sanitized
+   data -- the output will be different from the output from step 3
+6. move the output from step 4 to tmp dir to avoid confusion later
+7. step 5 also produces debug info of open dates, pick an earliest one with at
+   least N stocks trading (N = 1000)
+   - 1995-01-03 was picked as the first date of an year with >= 1000 (1005)
+     stocks trading (1994-11-15 was the first date with 1000 stocks trading)
+   - this date is after the creation of russell 3000 (1987-09-10) so the
+     result can be easily benchmarked against market performance
+8. run make_price_map.py to make price map
+9. choose cutoff date for training/test
+   - 2005-01-01 was picked to give 10 years of training data and 8 years of
+     testing data, both periods contain big ups/downs
+10. run collect_training_metadata.py to collect training metadata (sampled
+    dates/tickers along with gains/labels)
+11. run compute_features.py to compute features; notice that features should
+    be aligned with labels (eg, if predicting 1 week out, features should be
+    based on fine-grained steps)
+12. run collect_training_data.py to make input to libsvm
+13. copy easy.py and grid.py to where the data is and run easy.py
+

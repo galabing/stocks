@@ -34,8 +34,8 @@ def calculate_cost(stock_price, fund):
   f1 = n*0.005
   f2 = 1.0
   f = max(f1, f2)
-  return n, stock_price*n, f*2  # ib
-#  return n, stock_price*n, 3.95*2  # oh
+#  return n, stock_price*n, f*2  # ib
+  return n, stock_price*n, 3.95*2  # oh
 
 # load ticker filters
 ticker_filters = []
