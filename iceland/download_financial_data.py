@@ -15,6 +15,7 @@ from time import tzset
 # from the website, not due to some formatting issue.
 
 WGET = '/usr/local/bin/wget'
+DOWNLOAD_RETRIES = 3
 # TODO: This value needs to be in sync with reality, maybe add a
 # check during data download.
 START_STEP = 5  # step for istart_date
@@ -57,10 +58,19 @@ def download(ticker, start, output_dir, overwrite):
   url = ('http://ih.advfn.com/p.php?pid=financials'
          '&btn=quarterly_reports&symbol=%s&istart_date=%d' % (ticker, start))
   cmd = '%s -q "%s" -O %s' % (WGET, url, output_path)
+  logging.info('Running command: %s' % cmd)
   if system(cmd) != 0 and path.isfile(output_path):
     remove(output_path)
     return None
   return output_path
+
+def download_with_retry(ticker, start, output_dir, overwrite,
+                        retries=DOWNLOAD_RETRIES):
+  for i in range(retries):
+    output_path = download(ticker, start, output_dir, overwrite)
+    if output_path is not None:
+      return output_path
+  return None
 
 def check_and_get_page_content(page_path):
   assert path.isfile(page_path)
@@ -100,7 +110,8 @@ def check_and_get_page_count(page_path):
   assert q > p
   hits = SELECT_DATE_PROG.findall(content[p:q])
   values = sorted([int(hit[0]) for hit in hits])
-  assert all(values[i] == i for i in range(len(values)))
+  # TODO: AH doesn't have a date for page '0'.  What to do here?
+  #assert all(values[i] == i for i in range(len(values)))
   # TODO: More verifications in page content?
   return values[-1] + 1
 
@@ -141,7 +152,7 @@ def main():
       mkdir(output_dir)
 
     # Download the first page.
-    first_page_path = download(ticker, 0, output_dir, args.overwrite)
+    first_page_path = download_with_retry(ticker, 0, output_dir, args.overwrite)
     if first_page_path is None:
       logging.warning('Failed to download the first page for %s' % ticker)
       continue
@@ -151,7 +162,7 @@ def main():
     # Download the rest of the pages.
     for start in range(START_STEP, page_count, START_STEP):
       logging.info('Downloading %s:%d' % (ticker, start))
-      page_path = download(ticker, start, output_dir, args.overwrite)
+      page_path = download_with_retry(ticker, start, output_dir, args.overwrite)
       assert check_and_get_page_content(page_path) is not None
 
 if __name__ == '__main__':

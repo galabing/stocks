@@ -1,15 +1,15 @@
 #!/usr/bin/python
 
-""" Collects training metadata:
+""" Collects testing metadata:
 
     Given a cutoff date D, lookahead period L, sampling step S, sampling period
     number P, collects the following metadata for training:
-    - for every S days before cutoff date D minus L, up to period P, calculate
+    - for every S days after cutoff date D, up to period P, calculate
       and sort gains for all stocks on that date
     - classify gains into {+1, -1} classes
     - output <date> <ticker> <label> <gain> <perc>
 
-    Set P to -1 to collect all available dates before cutoff.
+    Set P to -1 to collect all available dates after cutoff.
 
     Classification of gains into {+1, -1} is controlled by flags
     --max_pos_rank, --min_neg_rank or --min_pos_gain, --max_neg_gain.
@@ -80,11 +80,12 @@ def main():
   with open(args.date_file, 'r') as fp:
     open_dates = set([d for d in fp.read().splitlines() if d >= min_date])
   assert open_dates <= set(price_map.keys())
-  dates = sorted([d for d in open_dates if d < args.cutoff_date])
-  print '%d open dates between min date %s and cutoff date %s' % (
-      len(dates), min_date, args.cutoff_date)
+  dates = sorted([d for d in open_dates if d > args.cutoff_date])
+  max_date = dates[-1]
+  print '%d open dates between cutoff date %s and max date %s' % (
+      len(dates), args.cutoff_date, max_date)
   if period > 0 and period < len(dates):
-    dates = dates[-period:]
+    dates = dates[:period]
   print '%d open dates within sampling period %s ... %s' % (
       len(dates), dates[0], dates[-1])
 

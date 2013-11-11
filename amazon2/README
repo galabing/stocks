@@ -23,6 +23,105 @@ procedure
 11. run compute_features.py to compute features; notice that features should
     be aligned with labels (eg, if predicting 1 week out, features should be
     based on fine-grained steps)
-12. run collect_training_data.py to make input to libsvm
+12. run collect_libsvm_data.py to make input to libsvm
 13. copy easy.py and grid.py to where the data is and run easy.py
+14. use optimal params to train a model with '-b 1' for probability support
+15. run collect_testing_metadata.py to collect testing metadata
+16. run collect_libsvm_data.py to make input to libsvm (for testing set
+    max_pos_count and max_neg_count to -1)
+17. scale testing data: svm-scale -r <range> <data> > <out>
+
+
+experiments
+===========
+a: predict one week ahead, look back 20 weeks, predicting top 25% vs bot 75%
+b: predict one q ahead, look back 20 mon, predicting top 25% vs bot 75%
+c: same as b, but predicting top 25% vs bot 25%
+d: same as b, but features based on cs246 instead of grapeot
+e: same as b, but predicting 30+% gain vs 30-% gain
+f: predict one mon ahead, look back 52 weeks, predicting 20+% gain vs 20-% gain
+g: predict one q ahead, look back 104 weeks, predicting 40+% gain vs 40-% gain
+h: same as g, but predicting 30+% gain vs 30-% gain (e)
+
+for e, generated pr curve, selected:
+    29.5685%,1.1226%,0.6800,788,240359
+    (precision,recall,threshold,above,below)
+which should select roughly 1/300 of the stocks (ie, 10 for russell 3000)
+
+for g, generated pr curve, selected:
+    9.9000%,0.9304%,0.8402,2101,464888
+there are better precision points, this is only selected to give about 1/300
+ratio.
+
+for f, generated pr curve, selected:
+    33.1027%,2.3907%,0.7600,1879,475451
+
+for h,
+    27.6569%,1.0837%,0.6702,781,233773
+for h1,
+    27.0754%,1.0636%,0.6820,783,233771
+
+from h/h1/h2/h3/h4:
+- price alone achieves similar pr curve as combined
+- dprice and dvolume alone achieve about half the perf as price
+- volume alone is very bad (positive correlation between p/r for tiny r),
+  consider removing this slice
+- but, all combined achieve better gain in perf.csv and perf2.csv than single
+  ones, so maybe margin is bigger for combined features
+h5: price + dprice + dvolume, beats h/h1-4
+h6: using features3_10_27 - pr very bad (gain is better than h5 though)
+h7: using features3_15_35 - pr/gain similar to h5 => try h10
+h8: using features3_10_79 - pr/gain slightly worse than h5
+h9: using features3_5_103 - pr better, but gain slightly worse than h5
+h10: using features3_20_27 - pr better, but gain worse than h5
+=> use h5
+h11: like h5 but no scaling
+
+i: negative
+
+j: like h5, but adding secind data - better gain but much worse pr
+j1: h11 data + secind, normalized to 0.1, no scaling
+j2: h11 data + secind, normalized to 0.5, no scaling
+j3: h11 data + secind, normalized to 1, no scaling
+j1/j2/j3: similar gain but worse pr
+
+initial features for
+- one week: 1 x 66
+- two weeks: 2 x 66
+- one month: 5 x 53
+- one q: 10 x 53 (-v)
+- six months: 20 x 53
+- one year: 20 x 53
+combine initial features with *_metadata_A
+- one week: A/onew
+- two weeks: A/twow
+- one month: A/onem
+- one q: A/oneq
+- six months: A/twoq
+- one year: A/oney
+results (perf3@5):
+- onew: avg,1.6665%,0.3451%,5.00,2368.47
+- twow: avg,2.9529%,0.6776%,5.00,2337.81
+- onem: avg,4.5463%,1.3139%,5.00,2275.99
+- oneq: avg,11.4452%,4.1199%,5.00,2151.04
+- twoq: avg,27.1279%,8.5513%,5.00,1937.81
+- oney: avg,56.0291%,15.6108%,5.00,1910.15
+
+try one year: 25 x 53: oney25, 15 x 53: one15 => delayed
+try one week: 2 x 66: onew2: much better pr and perf => try 3 x 66, 4 x 66
+    => slightly worse and worse pr and perf => onew2 it is
+    => try decomposing p/v/dp/dv into onew2p, onew2v, onew2dp, onew2dv
+
+results
+=======
+- prediction accuracy (and simulation gain) is highest when predicting about
+  25% vs rest but using gain as threshold:
+  - for lookahead of one week: 7.62%
+  - two weeks: 11.08%
+  - one month: 16.37%
+  - one q: 33.88%
+  - six months: 55.20%
+  - one year: 94.13%
+- training/testing metadata for these are saved in training_metadata_A and
+  testing_metadata_A; corresponding data in training_data_A and testing_data_A
 

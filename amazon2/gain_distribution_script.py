@@ -8,8 +8,8 @@ price_map_file = './price_map.pkl'
 # Price map may contain more than open dates for certain stocks, so we still
 # need this to filter those out.
 date_file = './open_dates_sanitized.txt'
-step = 60  # Compute gains every 'step' open dates.
-lookahead = 250  # Look ahead 'lookahead' days for computing gains.
+step = 5  # Compute gains every 'step' open dates.
+lookahead = 10  # Look ahead 'lookahead' days for computing gains.
 # Percentages of sorted stocks for which gains are averaged and outputted.
 percs = [
     ['t1', 0.01],
